@@ -1,25 +1,57 @@
-function copyNewRows() {
+function updateRowsByUniqueID() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var formSheet = ss.getSheetByName("Form");
   var dataSheet = ss.getSheetByName("Data");
+  
+  // Get headers from both sheets
+  var formHeaders = formSheet.getRange(1, 1, 1, formSheet.getLastColumn()).getValues()[0];
+  var dataHeaders = dataSheet.getRange(1, 1, 1, dataSheet.getLastColumn()).getValues()[0];
+  
+  // Get data from both sheets
   var formData = formSheet.getDataRange().getValues();
   var data = dataSheet.getDataRange().getValues();
-  var headers = formRange(1, 1, 1, formSheet.getLastColumn()).getValues();
-  var uniqueIDCol = headers.indexOf("UniqueID"); // Replace "UniqueID" with your actual column name
-  var newData = [];
+  
+  // Find the index of the "UniqueID" column in both sheets
+  var formUniqueIDCol = formHeaders.indexOf("UniqueID");
+  var dataUniqueIDCol = dataHeaders.indexOf("UniqueID");
+  
+  if (formUniqueIDCol === -1 || dataUniqueIDCol === -1) {
+    throw new Error("Column 'UniqueID' not found in one of the sheets.");
+  }
 
-  // Get existing IDs in Data sheet
-  var existingIDs = data.map(row => row[uniqueIDCol]);
-
-  // Iterate through Form data and filter out existing IDs
+  // Create a lookup object for the form data based on UniqueID
+  var formDataLookup = {};
   for (var i = 1; i < formData.length; i++) {
-    if (!existingIDs.includes(formData[i][uniqueIDCol])) {
-      newData.push(formData[i]);
+    var row = formData[i];
+    var uniqueID = row[formUniqueIDCol];
+    formDataLookup[uniqueID] = row;
+  }
+  
+  // Iterate through Data sheet and update rows where UniqueID matches
+  var updates = [];
+  for (var j = 1; j < data.length; j++) {
+    var dataRow = data[j];
+    var uniqueID = dataRow[dataUniqueIDCol];
+    
+    if (formDataLookup[uniqueID]) {
+      var formRow = formDataLookup[uniqueID];
+      var updatedRow = dataRow.slice();  // Create a copy of the data row
+      
+      // Map Form row data to Data sheet column order
+      dataHeaders.forEach(function(header, index) {
+        var formColIndex = formHeaders.indexOf(header);
+        if (formColIndex > -1) {
+          updatedRow[index] = formRow[formColIndex];
+        }
+      });
+      
+      // Store the updated row values and the row number to update in Data sheet
+      updates.push({ rowNumber: j + 1, values: updatedRow });
     }
   }
-
-  // Append new data to Data sheet
-  if (newData.length > 0) {
-    dataSheet.getRange(dataSheet.getLastRow() + 1, 1, newData.length, newData.length).setValues(newData);
-  }
+  
+  // Write updates back to Data sheet
+  updates.forEach(function(update) {
+    dataSheet.getRange(update.rowNumber, 1, 1, update.values.length).setValues([update.values]);
+  });
 }
