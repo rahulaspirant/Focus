@@ -21,8 +21,7 @@ function dynamicFilterWithDateFormatting() {
 
     // Filter the source data for matching rows
     const filtered = inquiriesData
-      //.filter(row => row[0] === value && row[10] !== "Fresh Inquiry")
-      .filter(row => row[0] === value)
+      .filter(row => row[0] === value && row[10] !== "Fresh Inquiry")
       .map(row => {
         // Format the timestamp (row[1]) to "DD/MM/YYYY HH:MM:SS"
         const date = typeof row[1] === "number" ? new Date(row[1]) : new Date(row[1]);
