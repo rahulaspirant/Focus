@@ -1,4 +1,7 @@
 function processScores() {
+
+//Sheet name "Scores". Column A header name "Score"
+
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName("Scores");
 
